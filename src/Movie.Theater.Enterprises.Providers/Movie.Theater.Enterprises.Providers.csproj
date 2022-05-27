@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="6.17.0" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.17.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Movie.Theater.Enterprises.Models\Movie.Theater.Enterprises.Models.csproj" />
+    <ProjectReference Include="..\Movie.Theater.Enterprises.Repos\Movie.Theater.Enterprises.Repos.csproj" />
+    <ProjectReference Include="..\Movie.Theater.Enterprises.Utilities\Movie.Theater.Enterprises.Utilities.csproj" />
+  </ItemGroup>
+
+</Project>
