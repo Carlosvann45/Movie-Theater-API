@@ -1,8 +1,8 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Movie.Theater.Enterprises.Models.DTOs;
 using Movie.Theater.Enterprises.Providers.Interfaces;
-using System.ComponentModel.DataAnnotations;
 
 namespace Movie.Theater.Enterprises.API.Controllers
 {
@@ -26,12 +26,19 @@ namespace Movie.Theater.Enterprises.API.Controllers
             this.mapper = mapper;
         }
 
-        [HttpGet(Constants.LOGIN_ENDPOINT)]
-        public async Task<ActionResult<string>> LoginInCustomerAsync([Required] string email, [Required] string password)
+        [Authorize]
+        [HttpGet("{username}")]
+        public IActionResult GetUser(string username)
+        {
+            return Ok();
+        }
+
+        [HttpPost(Constants.LOGIN_ENDPOINT)]
+        public async Task<ActionResult<JwtResponseDTO>> LoginInCustomerAsync([FromBody] LoginRequestDTO login)
         {
             logger.LogInformation(Constants.LOG_LOG_IN_CUSTOMER);
 
-            var authorizationToken = await customerProvider.LogInCustomerAsync(email, password);
+            var authorizationToken = await customerProvider.LogInCustomerAsync(login.Username, login.Password);
 
             return Ok(authorizationToken);
         }

@@ -1,13 +1,11 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Tokens;
 using Movie.Theater.Enterprises.Models.DTOs;
 using Movie.Theater.Enterprises.Models.Entities;
 using Movie.Theater.Enterprises.Providers.Interfaces;
 using Movie.Theater.Enterprises.Repos.Interfaces;
 using Movie.Theater.Enterprises.Utilities.ExceptionHandler;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
+using Movie.Theater.Enterprises.Utilities.Jwt;
 using System.Security.Cryptography;
 
 namespace Movie.Theater.Enterprises.Providers.Providers
@@ -37,7 +35,7 @@ namespace Movie.Theater.Enterprises.Providers.Providers
         /// <exception cref="ServiceUnavailableException">throws an exception when the database has a problem</exception>
         /// <exception cref="NotFoundException">throws exception if the email doesn't exist in database</exception>
         /// <exception cref="UnauthorizedException">throws exception if the sign in credentials fail</exception>
-        public async Task<string> LogInCustomerAsync(string email, string password)
+        public async Task<JwtResponseDTO> LogInCustomerAsync(string email, string password)
         {
             bool passwordVerified;
             Customer? existingCustomer;
@@ -59,9 +57,14 @@ namespace Movie.Theater.Enterprises.Providers.Providers
 
             if (!passwordVerified) throw new UnauthorizedException(Constants.CUSTOMER_UNAUTHORIZED);
 
-            string token = CreatCustomerToken(existingCustomer);
+            string secret = config.GetSection("AppSettings:Token").Value;
 
-            return token;
+            JwtResponseDTO jwtResponseDTO = new JwtResponseDTO();
+
+            jwtResponseDTO.AccessToken = existingCustomer.CreateAccessToken(secret);
+            jwtResponseDTO.RefresherToken = existingCustomer.CreatRefresherToken(secret);
+
+            return jwtResponseDTO;
         }
 
         /// <summary>
@@ -111,7 +114,7 @@ namespace Movie.Theater.Enterprises.Providers.Providers
         /// <param name="passwordSalt">out variable for the fenerated passwordSalt key</param>
         private void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)
         {
-            using(var hmac = new HMACSHA512())
+            using (var hmac = new HMACSHA512())
             {
                 passwordSalt = hmac.Key;
                 passwordHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
@@ -134,32 +137,5 @@ namespace Movie.Theater.Enterprises.Providers.Providers
                 return computedHash.SequenceEqual(customerToVerify.PasswordHash);
             }
         }
-
-        /// <summary>
-        /// Create A JWT Token base from a users username
-        /// </summary>
-        /// <param name="user">user to provide a username for</param>
-        /// <returns>JWT token string</returns>
-        private string CreatCustomerToken(Customer customer)
-        {
-            List<Claim> claims = new List<Claim>()
-            {
-                new Claim(ClaimTypes.Email, customer.Email)
-            };
-
-            var key = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(config.GetSection("AppSettings:Token").Value));
-
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
-
-            var token = new JwtSecurityToken(
-                claims: claims, 
-                expires: DateTime.Now.AddHours(12),
-                signingCredentials: creds);
-
-            var jwt = new JwtSecurityTokenHandler().WriteToken(token);
-
-            return jwt;
-        }
-
     }
 }

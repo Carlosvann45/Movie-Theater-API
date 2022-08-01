@@ -1,10 +1,12 @@
-﻿using Microsoft.OpenApi.Models;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using Movie.Theater.Enterprises.API.Mapper;
+using Movie.Theater.Enterprises.Providers;
 using Movie.Theater.Enterprises.Repos.Context;
 using Movie.Theater.Enterprises.Utilities.Configurations;
-using Movie.Theater.Enterprises.API.Mapper;
 using Movie.Theater.Enterprises.Utilities.ExceptionHandler;
-using Microsoft.EntityFrameworkCore;
-using Movie.Theater.Enterprises.Providers;
 
 namespace Movie.Theater.Enterprises.API
 {
@@ -35,6 +37,16 @@ namespace Movie.Theater.Enterprises.API
 
             // Adds mapper profile
             services.AddAutoMapper(typeof(MapperProfile));
+
+            // Adds security authorization
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters()
+                {
+                    IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(Configuration.GetSection("AppSettings:Token").Value)),
+                    ValidateIssuerSigningKey = true
+                };
+            });
 
             services.AddControllers();
 
@@ -98,6 +110,7 @@ namespace Movie.Theater.Enterprises.API
 
             app.UseRouting();
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
