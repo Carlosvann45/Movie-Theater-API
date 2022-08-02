@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Movie.Theater.Enterprises.Models.DTOs;
 using Movie.Theater.Enterprises.Providers.Interfaces;
@@ -26,21 +25,24 @@ namespace Movie.Theater.Enterprises.API.Controllers
             this.mapper = mapper;
         }
 
-        [Authorize]
-        [HttpGet("{username}")]
-        public IActionResult GetUser(string username)
-        {
-            return Ok();
-        }
-
         [HttpPost(Constants.LOGIN_ENDPOINT)]
         public async Task<ActionResult<JwtResponseDTO>> LoginInCustomerAsync([FromBody] LoginRequestDTO login)
         {
             logger.LogInformation(Constants.LOG_LOG_IN_CUSTOMER);
 
-            var authorizationToken = await customerProvider.LogInCustomerAsync(login.Username, login.Password);
+            var authorizationTokens = await customerProvider.LogInCustomerAsync(login.Email, login.Password);
 
-            return Ok(authorizationToken);
+            return Ok(authorizationTokens);
+        }
+
+        [HttpGet(Constants.REFRESH_ENDPOINT)]
+        public async Task<ActionResult<JwtResponseDTO>> RefreshCustomerToken([FromHeader(Name = "Authorization")] string refreshToken)
+        {
+            logger.LogInformation(Constants.LOG_REFRESH_CUSTOMER_TOKEN);
+
+            var authorizationTokens = await customerProvider.RefreshCustomerToken(refreshToken);
+
+            return Ok(authorizationTokens);
         }
 
 

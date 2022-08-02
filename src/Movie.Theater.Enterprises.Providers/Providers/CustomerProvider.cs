@@ -1,7 +1,8 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Movie.Theater.Enterprises.Models.DTOs;
 using Movie.Theater.Enterprises.Models.Entities;
+using Movie.Theater.Enterprises.Models.Misc;
 using Movie.Theater.Enterprises.Providers.Interfaces;
 using Movie.Theater.Enterprises.Repos.Interfaces;
 using Movie.Theater.Enterprises.Utilities.ExceptionHandler;
@@ -17,13 +18,15 @@ namespace Movie.Theater.Enterprises.Providers.Providers
     {
         private readonly ILogger<CustomerProvider> logger;
         private readonly ICustomerRepository customerRepo;
-        private readonly IConfiguration config;
+        private readonly IJwtUtility jwtUtility;
+        private readonly AppSettings appSettings;
 
-        public CustomerProvider(ILogger<CustomerProvider> logger, ICustomerRepository customerRepo, IConfiguration config)
+        public CustomerProvider(ILogger<CustomerProvider> logger, ICustomerRepository customerRepo, IJwtUtility jwtUtility, IOptions<AppSettings> appSettings)
         {
             this.logger = logger;
             this.customerRepo = customerRepo;
-            this.config = config;
+            this.jwtUtility = jwtUtility;
+            this.appSettings = appSettings.Value;
         }
 
         /// <summary>
@@ -57,12 +60,47 @@ namespace Movie.Theater.Enterprises.Providers.Providers
 
             if (!passwordVerified) throw new UnauthorizedException(Constants.CUSTOMER_UNAUTHORIZED);
 
-            string secret = config.GetSection("AppSettings:Token").Value;
 
             JwtResponseDTO jwtResponseDTO = new JwtResponseDTO();
 
-            jwtResponseDTO.AccessToken = existingCustomer.CreateAccessToken(secret);
-            jwtResponseDTO.RefresherToken = existingCustomer.CreatRefresherToken(secret);
+            jwtResponseDTO.AccessToken = jwtUtility.CreateAccessToken(existingCustomer);
+            jwtResponseDTO.RefresherToken = jwtUtility.CreatRefresherToken(existingCustomer);
+
+            return jwtResponseDTO;
+        }
+
+        /// <summary>
+        /// Gets a new access token with refresh token if refresher token is valid
+        /// </summary>
+        /// <param name="refresherToken"> refresher token to validate</param>
+        /// <returns>a new response with the same refresher token and a new access token</returns>
+        /// <exception cref="UnauthorizedException">throws exception when token is not valid</exception>
+        /// <exception cref="ServiceUnavailableException">throws exception when database has connection issues</exception>
+        /// <exception cref="NotFoundException">throws exception if there is an issue with finding a customer</exception>
+        public async Task<JwtResponseDTO> RefreshCustomerToken(string refresherToken)
+        {
+            if (!jwtUtility.ValidateToken(refresherToken, appSettings.RefreshSecret)) throw new UnauthorizedException(Constants.BAD_TOKEN);
+
+            string email = jwtUtility.GetEmailFromToken(refresherToken);
+            Customer? existingCustomer;
+
+            try
+            {
+                existingCustomer = await customerRepo.GetCustomerByEmailAsync(email);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex.Message);
+
+                throw new ServiceUnavailableException(Constants.SERVER_UNAVAILABLE_MESS);
+            }
+
+            if (existingCustomer == null) throw new NotFoundException(Constants.CUSTOMER_EMAIL_NOTFOUND);
+
+            JwtResponseDTO jwtResponseDTO = new JwtResponseDTO();
+
+            jwtResponseDTO.AccessToken = jwtUtility.CreateAccessToken(existingCustomer);
+            jwtResponseDTO.RefresherToken = refresherToken[7..].Trim();
 
             return jwtResponseDTO;
         }
@@ -112,7 +150,7 @@ namespace Movie.Theater.Enterprises.Providers.Providers
         /// <param name="password">password to hash</param>
         /// <param name="passwordHash">out variable for the generated passwordHash key</param>
         /// <param name="passwordSalt">out variable for the fenerated passwordSalt key</param>
-        private void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)
+        private static void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)
         {
             using (var hmac = new HMACSHA512())
             {
@@ -128,7 +166,7 @@ namespace Movie.Theater.Enterprises.Providers.Providers
         /// <param name="password">password to check</param>
         /// <param name="customerToVerify">customer to verify passwordHash key</param>
         /// <returns>boolean values based from two passwordHash keys</returns>
-        private bool VerifyPasswordHash(string password, Customer customerToVerify)
+        private static bool VerifyPasswordHash(string password, Customer customerToVerify)
         {
             using (var hmac = new HMACSHA512(customerToVerify.PasswordSalt))
             {

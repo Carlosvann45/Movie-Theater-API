@@ -11,6 +11,9 @@ namespace Movie.Theater.Enterprises.Providers.Interfaces
         /// <inheritdoc cref="Providers.CustomerProvider.LogInCustomerAsync" />
         Task<JwtResponseDTO> LogInCustomerAsync(string email, string password);
 
+        /// <inheritdoc cref="Providers.CustomerProvider.RefreshCustomerToken" />
+        Task<JwtResponseDTO> RefreshCustomerToken(string refresherToken);
+
         /// <inheritdoc cref="Providers.CustomerProvider.RegisterCustomerAsync" />
         Task<Customer> RegisterCustomerAsync(CustomerDTO customer);
 

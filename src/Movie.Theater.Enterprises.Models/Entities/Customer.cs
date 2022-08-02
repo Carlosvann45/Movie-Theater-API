@@ -1,4 +1,4 @@
-﻿using Movie.Theater.Enterprises.Models.DTOs;
+﻿using Movie.Theater.Enterprises.Models.Misc;
 using Newtonsoft.Json;
 
 namespace Movie.Theater.Enterprises.Models.Entities
@@ -13,6 +13,8 @@ namespace Movie.Theater.Enterprises.Models.Entities
         public string LastName { get; set; } = string.Empty;
 
         public string Email { get; set; } = string.Empty;
+
+        public Role Role { get; set; } = Role.User;
 
         public byte[] PasswordHash { get; set; } = new byte[32];
 

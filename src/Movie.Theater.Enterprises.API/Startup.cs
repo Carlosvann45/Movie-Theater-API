@@ -1,12 +1,13 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using Movie.Theater.Enterprises.API.Jwt;
 using Movie.Theater.Enterprises.API.Mapper;
+using Movie.Theater.Enterprises.Models.Misc;
 using Movie.Theater.Enterprises.Providers;
 using Movie.Theater.Enterprises.Repos.Context;
 using Movie.Theater.Enterprises.Utilities.Configurations;
 using Movie.Theater.Enterprises.Utilities.ExceptionHandler;
+using Movie.Theater.Enterprises.Utilities.Jwt;
 
 namespace Movie.Theater.Enterprises.API
 {
@@ -38,15 +39,11 @@ namespace Movie.Theater.Enterprises.API
             // Adds mapper profile
             services.AddAutoMapper(typeof(MapperProfile));
 
-            // Adds security authorization
-            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
-            {
-                options.TokenValidationParameters = new TokenValidationParameters()
-                {
-                    IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(Configuration.GetSection("AppSettings:Token").Value)),
-                    ValidateIssuerSigningKey = true
-                };
-            });
+            // configure appsettings
+            services.Configure<AppSettings>(Configuration.GetSection("AppSettings"));
+
+            // scope utility file
+            services.AddScoped<IJwtUtility, JwtUtility>();
 
             services.AddControllers();
 
@@ -108,10 +105,10 @@ namespace Movie.Theater.Enterprises.API
             // handles exceptions thrown in application
             app.UseMiddleware(typeof(ExceptionHandlingMiddleware));
 
-            app.UseRouting();
+            // handles jwt tokens being passed in the header
+            app.UseMiddleware<JwtMiddleware>();
 
-            app.UseAuthentication();
-            app.UseAuthorization();
+            app.UseRouting();
 
             app.UseEndpoints(endpoints =>
             {
