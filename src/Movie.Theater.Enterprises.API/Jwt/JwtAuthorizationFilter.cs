@@ -6,6 +6,9 @@ using Movie.Theater.Enterprises.Utilities.Jwt;
 
 namespace Movie.Theater.Enterprises.API.Jwt
 {
+    /// <summary>
+    /// jwt authorization filter to authorize customers to specific methods
+    /// </summary>
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
     public class JwtAuthorizationFilter : Attribute, IAuthorizationFilter
     {
@@ -17,6 +20,10 @@ namespace Movie.Theater.Enterprises.API.Jwt
             this.roles = roles ?? new Role[] { };
         }
 
+        /// <summary>
+        /// Handles authorizing any class/method that has the authorization attribute
+        /// </summary>
+        /// <param name="context">context to check if customer is authorized</param>
         public void OnAuthorization(AuthorizationFilterContext context)
         {
             // skip authorization if action is decorated with [AllowAnonymous] attribute
@@ -25,8 +32,19 @@ namespace Movie.Theater.Enterprises.API.Jwt
                 return;
 
             Customer? user = (Customer?)context.HttpContext.Items["Customer"];
+            string? error = (string?)context.HttpContext.Items["Error"];
 
-            if (user == null)
+            if (error != null)
+            {
+                context.Result = new JsonResult(new
+                {
+                    TimeStamp = DateTime.Now,
+                    ErrorMessage = error,
+                    ErrorCode = Constants.UNAUTHORIZED_ERROR
+                })
+                { StatusCode = StatusCodes.Status401Unauthorized };
+            }
+            else if (user == null)
             {
                 context.Result = new JsonResult(new
                 {
@@ -49,41 +67,3 @@ namespace Movie.Theater.Enterprises.API.Jwt
         }
     }
 }
-/*
-
-            bool isValid = false;
-            string token = string.Empty;
-            string error = string.Empty;
-            var headers = filterContext.HttpContext.Request.Headers;
-
-            if (headers.ContainsKey("Authorization"))
-            {
-                token = headers.First(h => h.Key == "Authorization").Value;
-
-                if (!token.StartsWith("Bearer "))
-                {
-                    filterContext.ModelState.AddModelError("Unauthorized", "Your token does not start with Bearer ");
-                }
-                else
-                {
-                    token = token[7..].Trim();
-
-                    if (token.ValidateToken("")) isValid = true;
-                    else
-                    {
-                        filterContext.ModelState.AddModelError("Unauthorized", Constants.BAD_TOKEN);
-                    }
-                }
-            }
-            else
-            {
-
-                filterContext.ModelState.AddModelError("Unauthorized", "You must provide a Bearer token for access.");
-            }
-
-            if (!isValid)
-            {
-                filterContext.Result = new UnauthorizedObjectResult(filterContext.ModelState);
-            } 
-
- */

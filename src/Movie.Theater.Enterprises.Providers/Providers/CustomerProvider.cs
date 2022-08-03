@@ -30,6 +30,50 @@ namespace Movie.Theater.Enterprises.Providers.Providers
         }
 
         /// <summary>
+        /// Gets a customer with an email from a bearer token
+        /// </summary>
+        /// <param name="bearerToken">token to get email from</param>
+        /// <param name="email">email to check against</param>
+        /// <returns>existing customer</returns>
+        /// <exception cref="BadRequestException">throws a bad request if emails dont match</exception>
+        public async Task<Customer?> GetCustomerWithTokenAsync(string bearerToken, string email)
+        {
+            string tokenEmail = jwtUtility.GetEmailFromToken(bearerToken);
+
+            if (tokenEmail.Equals(email)) throw new BadRequestException(Constants.EMAIL_MISMATCH);
+
+            return await GetCustomerByEmailAsync(tokenEmail);
+        }
+
+        /// <summary>
+        /// Gets a customer by an email address
+        /// </summary>
+        /// <param name="email">email to grab</param>
+        /// <returns>a customer if found</returns>
+        /// <exception cref="ServiceUnavailableException">throws exception if htere is an issue with the database</exception>
+        /// <exception cref="NotFoundException">throws exception if cutomer is not found</exception>
+        public async Task<Customer?> GetCustomerByEmailAsync(string email)
+        {
+            Customer? customer;
+
+            try
+            {
+                customer = await customerRepo.GetCustomerByEmailAsync(email);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex.Message);
+
+                throw new ServiceUnavailableException(Constants.SERVER_UNAVAILABLE_MESS);
+            }
+
+            if (customer == null) throw new NotFoundException(Constants.CUSTOMER_EMAIL_NOTFOUND);
+
+            return customer;
+
+        }
+
+        /// <summary>
         /// verifys a customers account for login based from a username and password
         /// </summary>
         /// <param name="email">username for login </param>
@@ -53,6 +97,7 @@ namespace Movie.Theater.Enterprises.Providers.Providers
 
                 throw new ServiceUnavailableException(Constants.SERVER_UNAVAILABLE_MESS);
             }
+
 
             if (existingCustomer == null) throw new NotFoundException(Constants.CUSTOMER_EMAIL_NOTFOUND);
 

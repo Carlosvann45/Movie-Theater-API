@@ -14,7 +14,7 @@ namespace Movie.Theater.Enterprises.Models.Entities
 
         public string Email { get; set; } = string.Empty;
 
-        public Role Role { get; set; } = Role.User;
+        public Role Role { get; set; } = Role.Customer;
 
         public byte[] PasswordHash { get; set; } = new byte[32];
 

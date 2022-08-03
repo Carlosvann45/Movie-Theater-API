@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using Movie.Theater.Enterprises.API.Jwt;
 using Movie.Theater.Enterprises.Models.DTOs;
+using Movie.Theater.Enterprises.Models.Misc;
 using Movie.Theater.Enterprises.Providers.Interfaces;
 
 namespace Movie.Theater.Enterprises.API.Controllers
@@ -25,6 +27,30 @@ namespace Movie.Theater.Enterprises.API.Controllers
             this.mapper = mapper;
         }
 
+        /// <summary>
+        /// If token is valid gets a customer by email
+        /// </summary>
+        /// <param name="bearerToken">token to get emai</param>
+        /// <param name="email">email for customer</param>
+        /// <returns>a customer based from email</returns>
+        [JwtAuthorizationFilter(roles: Role.Customer)]
+        [HttpGet(Constants.EMAIL)]
+        public async Task<ActionResult<CustomerDTO>> GetCustomerByEmail([FromHeader(Name = "Authorization")] string bearerToken, string email)
+        {
+            logger.LogInformation(Constants.LOG_GET_CUSTOMER_EMAIL);
+
+            var customer = await customerProvider.GetCustomerWithTokenAsync(bearerToken, email);
+
+            var customerDTO = mapper.Map<CustomerDTO>(customer);
+
+            return Ok(customerDTO);
+        }
+
+        /// <summary>
+        /// Logs in customer with customer credentials
+        /// </summary>
+        /// <param name="login">login credentials</param>
+        /// <returns>returns Jwt response</returns>
         [HttpPost(Constants.LOGIN_ENDPOINT)]
         public async Task<ActionResult<JwtResponseDTO>> LoginInCustomerAsync([FromBody] LoginRequestDTO login)
         {
@@ -35,6 +61,11 @@ namespace Movie.Theater.Enterprises.API.Controllers
             return Ok(authorizationTokens);
         }
 
+        /// <summary>
+        /// Refreshs access token with refresher token if its valid
+        /// </summary>
+        /// <param name="refreshToken">refresher token to validate</param>
+        /// <returns>Jwt resposne wih new access token</returns>
         [HttpGet(Constants.REFRESH_ENDPOINT)]
         public async Task<ActionResult<JwtResponseDTO>> RefreshCustomerToken([FromHeader(Name = "Authorization")] string refreshToken)
         {
@@ -45,7 +76,11 @@ namespace Movie.Theater.Enterprises.API.Controllers
             return Ok(authorizationTokens);
         }
 
-
+        /// <summary>
+        /// Regsiters an account with the API
+        /// </summary>
+        /// <param name="customerToCreate">customer to register</param>
+        /// <returns>new customer</returns>
         [HttpPost(Constants.REGISTER_ENDPOINT)]
         public async Task<ActionResult<CustomerDTO>> RegisterCustomerAsync([FromBody] CustomerDTO customerToCreate)
         {

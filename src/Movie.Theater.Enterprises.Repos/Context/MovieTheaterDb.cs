@@ -17,6 +17,5 @@ namespace Movie.Theater.Enterprises.Repos.Context
         {
             return base.SaveChangesAsync(cancellationToken);
         }
-
     }
 }

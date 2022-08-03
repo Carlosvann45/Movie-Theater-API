@@ -7,6 +7,9 @@ using System.Security.Claims;
 
 namespace Movie.Theater.Enterprises.Utilities.Jwt
 {
+    /// <summary>
+    /// Jwt utility for validating and creating tokens
+    /// </summary>
     public class JwtUtility : IJwtUtility
     {
         private readonly AppSettings appSettings;
@@ -16,6 +19,11 @@ namespace Movie.Theater.Enterprises.Utilities.Jwt
             this.appSettings = appSettings.Value;
         }
 
+        /// <summary>
+        /// Gets email from provided bearer token
+        /// </summary>
+        /// <param name="bearerToken">token to get email from</param>
+        /// <returns>email from token</returns>
         public string GetEmailFromToken(string bearerToken)
         {
             string token = bearerToken[7..].Trim();
@@ -34,6 +42,12 @@ namespace Movie.Theater.Enterprises.Utilities.Jwt
             return "";
         }
 
+        /// <summary>
+        /// Validates token with given secret
+        /// </summary>
+        /// <param name="bearerToken">token to validate</param>
+        /// <param name="secret">secret to validate</param>
+        /// <returns>boolean value based on if token is valid</returns>
         public bool ValidateToken(string bearerToken, string secret)
         {
             bool isValid;
@@ -68,9 +82,9 @@ namespace Movie.Theater.Enterprises.Utilities.Jwt
             return isValid;
         }
         /// <summary>
-        /// Create A JWT Token base from a users username
+        /// Create A JWT Token base from a customers username
         /// </summary>
-        /// <param name="user">user to provide a username for</param>
+        /// <param name="customer">customer to provide a username for</param>
         /// <returns>JWT token string</returns>
         public string CreateAccessToken(Customer customer)
         {
@@ -98,9 +112,9 @@ namespace Movie.Theater.Enterprises.Utilities.Jwt
         }
 
         /// <summary>
-        /// Create A JWT Token base from a users username
+        /// Create A JWT Token base from a customers username
         /// </summary>
-        /// <param name="user">user to provide a username for</param>
+        /// <param name="customer">customer to provide a username for</param>
         /// <returns>JWT token string</returns>
         public string CreatRefresherToken(Customer customer)
         {

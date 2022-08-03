@@ -8,6 +8,12 @@ namespace Movie.Theater.Enterprises.Providers.Interfaces
     /// </summary>
     public interface ICustomerProvider
     {
+        /// <inheritdoc cref="Providers.CustomerProvider.GetCustomerWithTokenAsync" />
+        Task<Customer?> GetCustomerWithTokenAsync(string bearerToken, string email);
+
+        /// <inheritdoc cref="Providers.CustomerProvider.GetCustomerByEmailAsync" />
+        Task<Customer?> GetCustomerByEmailAsync(string email);
+
         /// <inheritdoc cref="Providers.CustomerProvider.LogInCustomerAsync" />
         Task<JwtResponseDTO> LogInCustomerAsync(string email, string password);
 
