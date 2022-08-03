@@ -33,8 +33,8 @@ namespace Movie.Theater.Enterprises.API.Controllers
         /// <param name="bearerToken">token to get emai</param>
         /// <param name="email">email for customer</param>
         /// <returns>a customer based from email</returns>
-        [JwtAuthorizationFilter(roles: Role.Customer)]
         [HttpGet(Constants.EMAIL)]
+        [JwtAuthorizationFilter(roles: Role.Customer)]
         public async Task<ActionResult<CustomerDTO>> GetCustomerByEmail([FromHeader(Name = "Authorization")] string bearerToken, string email)
         {
             logger.LogInformation(Constants.LOG_GET_CUSTOMER_EMAIL);
