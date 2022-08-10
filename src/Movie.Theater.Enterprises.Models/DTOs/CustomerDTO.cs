@@ -1,5 +1,5 @@
 ﻿using Movie.Theater.Enterprises.Models.Entities;
-using System.ComponentModel.DataAnnotations;
+using Movie.Theater.Enterprises.Models.Misc;
 
 namespace Movie.Theater.Enterprises.Models.DTOs
 {
@@ -13,6 +13,7 @@ namespace Movie.Theater.Enterprises.Models.DTOs
         public string LastName { get; set; } = string.Empty;
 
         public string Email { get; set; } = string.Empty;
+        public Role Role { get; private set; } = Role.Customer;
 
         public string Password { get; set; } = string.Empty;
 

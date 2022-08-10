@@ -40,9 +40,13 @@ namespace Movie.Theater.Enterprises.Providers.Providers
         {
             string tokenEmail = jwtUtility.GetEmailFromToken(bearerToken);
 
-            if (tokenEmail.Equals(email)) throw new BadRequestException(Constants.EMAIL_MISMATCH);
+            if (!tokenEmail.Equals(email)) throw new BadRequestException(Constants.EMAIL_MISMATCH);
 
-            return await GetCustomerByEmailAsync(tokenEmail);
+            Customer? customer = await GetCustomerByEmailAsync(tokenEmail);
+
+            if (customer == null) throw new NotFoundException(Constants.CUSTOMER_EMAIL_NOTFOUND);
+
+            return customer;
         }
 
         /// <summary>
@@ -66,8 +70,6 @@ namespace Movie.Theater.Enterprises.Providers.Providers
 
                 throw new ServiceUnavailableException(Constants.SERVER_UNAVAILABLE_MESS);
             }
-
-            if (customer == null) throw new NotFoundException(Constants.CUSTOMER_EMAIL_NOTFOUND);
 
             return customer;
 
